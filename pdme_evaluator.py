@@ -5,16 +5,15 @@ import os
 from dotenv import load_dotenv
 
 class PDMEvaluator:
-    def __init__(self, eval_model_api_key, model_1_api_key, model_2_api_key, generation_model):
+    def __init__(self, eval_model_api_key, model_1_api_key, model_2_api_key):
         self.eval_model_api_key = eval_model_api_key
         self.model_1_api_key = model_1_api_key
         self.model_2_api_key = model_2_api_key
-        self.generation_model = generation_model
     
-    def generate_prompt(self, api_key, prompt, model, max_tokens=1000):
+    def generate_prompt(self, api_key, prompt, max_tokens=1000):
         openai.api_key = api_key
         response = openai.Completion.create(
-            engine=model,
+            engine="text-davinci-003",  # You can choose another engine if preferred
             prompt=prompt,
             max_tokens=max_tokens,
             logprobs=1,
@@ -26,12 +25,12 @@ class PDMEvaluator:
         return f"Write a two sentence synopsis about {seed_1}, with the theme {seed_2}, and the story should somehow include {seed_3} and {seed_4}."
 
     def generate_question_prompt(self, bootstrap_prompt):
-        question_prompt, _ = self.generate_prompt(self.eval_model_api_key, bootstrap_prompt, self.generation_model)
+        question_prompt, _ = self.generate_prompt(self.eval_model_api_key, bootstrap_prompt)
         return question_prompt
 
     def get_model_responses(self, question_prompt):
-        response_1, logprobs_1 = self.generate_prompt(self.model_1_api_key, question_prompt, self.generation_model)
-        response_2, logprobs_2 = self.generate_prompt(self.model_2_api_key, question_prompt, self.generation_model)
+        response_1, logprobs_1 = self.generate_prompt(self.model_1_api_key, question_prompt)
+        response_2, logprobs_2 = self.generate_prompt(self.model_2_api_key, question_prompt)
         return (response_1, logprobs_1), (response_2, logprobs_2)
     
     def compare_logprobs(self, response1, response2):
@@ -102,7 +101,6 @@ def main():
 
     parser = argparse.ArgumentParser(description="Prompt-Driven Model Evaluation")
     parser.add_argument('--eval_model', type=str, required=True, help='Name of the evaluation model')
-    parser.add_argument('--generation_model', type=str, required=True, help='Name of the generation model')
     parser.add_argument('--model_1', type=str, required=True, help='Name of the first model to evaluate')
     parser.add_argument('--model_2', type=str, required=True, help='Name of the second model to evaluate')
     parser.add_argument('--seed_1', type=str, default="an old Englishman", help='Seed 1 for the bootstrap prompt')
@@ -119,7 +117,7 @@ def main():
     if not eval_model_api_key or not model_1_api_key or not model_2_api_key:
         raise ValueError("One or more API keys are missing. Please check your .env file.")
 
-    pdme = PDMEvaluator(eval_model_api_key, model_1_api_key, model_2_api_key, args.generation_model)
+    pdme = PDMEvaluator(eval_model_api_key, model_1_api_key, model_2_api_key)
     result = pdme.evaluate(args.seed_1, args.seed_2, args.seed_3, args.seed_4)
     print(result)
 

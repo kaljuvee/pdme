@@ -29,7 +29,6 @@
  ```
 python pdme_evaluator.py 
     --eval_model meta-llama/Meta-Llama-3-8B 
-    --generation_model text-davinci-003 
     --model_1 deepseek-ai/DeepSeek-Coder-V2-Instruct 
     --model_2 meta-llama/Meta-Llama-3-8B-Instruct 
     --seed_1 "an old Englishman" 
