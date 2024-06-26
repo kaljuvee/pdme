@@ -1,4 +1,4 @@
-# Prompt Driven Model Evaluation (PMDE)
+# Prompt Driven Model Evaluation (PDME)
 
 ## Step 1: Set Up Virtual Environment and Install Dependencies
 
