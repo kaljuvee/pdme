@@ -26,10 +26,14 @@
   ```
 
 ### Sample Usage
+#### Single test model
  ```
-python pdme_client.py --eval_model openai/GPT-4o --test_model mistralai/Mistral-7B-Instruct-v0.3 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
+python pdme_client.py --eval_model openai/GPT-4o --test_model google/BERT --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
  ```
-
+#### Multiple test models from a file
+```
+python pdme_client.py --eval_model openai/GPT-4o --test_model_file test_models.csv --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
+ ```
  ## Overview
 
 The method uses a single text generation AI, referred to as eval model, to evaluate any other text generation AI on any topic, and the evaluation works like this:
