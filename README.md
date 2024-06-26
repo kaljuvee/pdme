@@ -38,3 +38,26 @@ python pdme_evaluator.py
     --seed_4 "old cars"
 
  ```
+
+ ## Overview
+
+The method uses a single text generation AI, referred to as eval model, to evaluate any other text generation AI on any topic, and the evaluation works like this:
+
+1. We write a text prompt for what questions the eval model should generate, and provide seeds that are randomly picked to generate a question.
+2. The question is sent to the AI model being tested, and it generates a response.
+3. Likewise, the eval model also generates an answer to the same question.
+4. The eval model then uses a text prompt we write, to compare the two answers and pick the winner. (This model does not necessarily have to be the same as the eval model, but it does simplify inference)
+
+This method allows us to evaluate models for any topic, such as: storytelling, programming, finance, and QnA.
+
+## Technical Description
+
+See above for the installation and running instructions.
+
+### Example Use Case
+
+Let’s say you want to evaluate a model's ability to write stories, PDME should be possible to use in the following way:
+
+1. **Bootstrap Prompt** - First generate a bootstrap prompt using random seeds, e.g.
+
+(continue....)
