@@ -1,4 +1,4 @@
-# Prompt Driven Model Evaluation (PMDE)
+# Prompt Driven Model Evaluation (PDME)
 
 ## Step 1: Set Up Virtual Environment and Install Dependencies
 
@@ -27,15 +27,7 @@
 
 ### Sample Usage
  ```
-python pdme_evaluator.py 
-    --eval_model meta-llama/Meta-Llama-3-8B 
-    --model_1 deepseek-ai/DeepSeek-Coder-V2-Instruct 
-    --model_2 meta-llama/Meta-Llama-3-8B-Instruct 
-    --seed_1 "an old Englishman" 
-    --seed_2 "finding happiness" 
-    --seed_3 "rain" 
-    --seed_4 "old cars"
-
+python pdme_client.py --eval_model openai/GPT-4o --test_model mistralai/Mistral-7B-Instruct-v0.3 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
  ```
 
  ## Overview
@@ -60,3 +52,6 @@ Let’s say you want to evaluate a model's ability to write stories, PDME should
 1. **Bootstrap Prompt** - First generate a bootstrap prompt using random seeds, e.g.
 
 (continue....)
+
+### Resources
+- [LangChain Providers](https://python.langchain.com/v0.2/docs/integrations/platforms/)
