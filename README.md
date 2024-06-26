@@ -52,3 +52,6 @@ Let’s say you want to evaluate a model's ability to write stories, PDME should
 1. **Bootstrap Prompt** - First generate a bootstrap prompt using random seeds, e.g.
 
 (continue....)
+
+### Resources
+- [LangChain Provider](https://python.langchain.com/v0.2/docs/integrations/platforms/)
