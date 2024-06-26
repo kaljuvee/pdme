@@ -16,21 +16,44 @@ class PDMEvaluator:
         response = openai.Completion.create(
             engine=model,
             prompt=prompt,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
+            logprobs=1,
+            echo=True
         )
-        return response.choices[0].text.strip()
+        return response.choices[0].text.strip(), response.choices[0].logprobs
 
     def generate_bootstrap_prompt(self, seed_1, seed_2, seed_3, seed_4):
         return f"Write a two sentence synopsis about {seed_1}, with the theme {seed_2}, and the story should somehow include {seed_3} and {seed_4}."
 
     def generate_question_prompt(self, bootstrap_prompt):
-        return self.generate_prompt(self.eval_model_api_key, bootstrap_prompt, self.generation_model)
+        question_prompt, _ = self.generate_prompt(self.eval_model_api_key, bootstrap_prompt, self.generation_model)
+        return question_prompt
 
     def get_model_responses(self, question_prompt):
-        response_1 = self.generate_prompt(self.model_1_api_key, question_prompt, self.generation_model)
-        response_2 = self.generate_prompt(self.model_2_api_key, question_prompt, self.generation_model)
-        return response_1, response_2
+        response_1, logprobs_1 = self.generate_prompt(self.model_1_api_key, question_prompt, self.generation_model)
+        response_2, logprobs_2 = self.generate_prompt(self.model_2_api_key, question_prompt, self.generation_model)
+        return (response_1, logprobs_1), (response_2, logprobs_2)
     
+    def compare_logprobs(self, response1, response2):
+        def get_response_logprob(logprobs, response):
+            tokens = response.split()
+            token_logprobs = logprobs['token_logprobs'][-len(tokens):]
+            return sum(token_logprobs)
+
+        response1_logprob = get_response_logprob(response1[1], response1[0])
+        response2_logprob = get_response_logprob(response2[1], response2[0])
+
+        response1_reversed_logprob = get_response_logprob(response1[1], response2[0])
+        response2_reversed_logprob = get_response_logprob(response2[1], response1[0])
+
+        prob1_better = (response1_logprob + response2_reversed_logprob) / 2
+        prob2_better = (response2_logprob + response1_reversed_logprob) / 2
+
+        if prob1_better > prob2_better:
+            return [{'model': '1', 'rank': 1}, {'model': '2', 'rank': 2}]
+        else:
+            return [{'model': '1', 'rank': 2}, {'model': '2', 'rank': 1}]
+
     def compare_responses(self, question, response1, response2):
         vs_prompt = f"""
         <prefix><user_start>I want you to create a leaderboard of different large-language models. To do so, I will give you the instructions (prompts) given to the models, and the responses of two models. Please rank the models based on which responses would be preferred by humans. All inputs and outputs should be python dictionaries.
@@ -44,11 +67,11 @@ class PDMEvaluator:
         [
             {{
                 "model": "1",
-                "answer": "{response1}"
+                "answer": "{response1[0]}"
             }},
             {{
                 "model": "2",
-                "answer": "{response2}"
+                "answer": "{response2[0]}"
             }}
         ]
 
@@ -60,8 +83,8 @@ class PDMEvaluator:
 
         Your response must be a valid Python dictionary and should contain nothing else because we will directly execute it in Python. Please provide the ranking that the majority of humans would give.
         <assistant_start>[
-            {{'model': '1', 'rank': """
-        return json.loads(self.generate_prompt(self.eval_model_api_key, vs_prompt, self.generation_model))
+            {{'model': '"""
+        return self.compare_logprobs(response1, response2)
 
     def evaluate(self, seed_1, seed_2, seed_3, seed_4):
         bootstrap_prompt = self.generate_bootstrap_prompt(seed_1, seed_2, seed_3, seed_4)
