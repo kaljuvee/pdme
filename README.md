@@ -27,14 +27,7 @@
 
 ### Sample Usage
  ```
-python pdme_evaluator.py 
-    --eval_model openai/GPT-4o
-    --test_model mistralai/Mistral-7B-Instruct-v0.3
-    --seed_1 "an old Englishman" 
-    --seed_2 "finding happiness" 
-    --seed_3 "rain" 
-    --seed_4 "old cars"
-
+python pdme_client.py --eval_model openai/GPT-4o --test_model mistralai/Mistral-7B-Instruct-v0.3 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
  ```
 
  ## Overview
