@@ -28,9 +28,8 @@
 ### Sample Usage
  ```
 python pdme_evaluator.py 
-    --eval_model meta-llama/Meta-Llama-3-8B 
-    --model_1 deepseek-ai/DeepSeek-Coder-V2-Instruct 
-    --model_2 meta-llama/Meta-Llama-3-8B-Instruct 
+    --eval_model openai/GPT-4o
+    --test_model mistralai/Mistral-7B-Instruct-v0.3
     --seed_1 "an old Englishman" 
     --seed_2 "finding happiness" 
     --seed_3 "rain" 
