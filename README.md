@@ -54,4 +54,4 @@ Let’s say you want to evaluate a model's ability to write stories, PDME should
 (continue....)
 
 ### Resources
-- [LangChain Provider](https://python.langchain.com/v0.2/docs/integrations/platforms/)
+- [LangChain Providers](https://python.langchain.com/v0.2/docs/integrations/platforms/)
