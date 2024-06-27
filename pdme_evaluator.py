@@ -1,7 +1,4 @@
 import json
-from langchain.llms import OpenAI
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
 
 class PDMEvaluator:
     def __init__(self, eval_model, test_model):
