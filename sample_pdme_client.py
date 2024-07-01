@@ -3,35 +3,34 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 from pdme_evaluator import PDMEvaluator
-from langchain_openai import OpenAI
+from langchain_openai import OpenAI, ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.llms import HuggingFaceHub
 from huggingface_hub import HfApi
 
+def get_model_id(model_name):
+    return model_name.split('/')[-1]
+
 def load_model(model_name):
-    try:
+    model_id = model_name
+    try:        
         if 'openai' in model_name.lower():
+            model_id = get_model_id(model_name)
             openai_api_key = os.getenv('OPENAI_API_KEY')
             if not openai_api_key:
                 raise ValueError("OpenAI API key not found in environment variables.")
-            return OpenAI(temperature=0.2, api_key=openai_api_key)  # Adjust parameters as needed
+            return OpenAI(model=model_id, temperature=0.2, api_key=openai_api_key).bind(logprobs=True)
         elif 'google' in model_name.lower():
             google_api_key = os.getenv('GOOGLE_API_KEY')
             if not google_api_key:
                 raise ValueError("Google API key not found in environment variables.")
-            return ChatGoogleGenerativeAI(model_name=model_name, api_key=google_api_key)
+            model_id = get_model_id(model_name)
+            return ChatGoogleGenerativeAI(model_name=model_id, api_key=google_api_key)
         else:
             huggingface_api_key = os.getenv('HUGGINGFACE_API_KEY')
             if not huggingface_api_key:
                 raise ValueError("HuggingFace API key not found in environment variables.")
-                     # Check if the model supports text-generation task
-            api = HfApi()
-            model_info = api.model_info(model_name)
-            if 'text-generation' not in model_info.pipeline_tag:
-                raise ValueError(f"Model '{model_name}' does not support text-generation task.")
-
-            # depcrecated - use https://huggingface.co/blog/langchain
-            llm = HuggingFaceHub(repo_id=model_name,
+            llm = HuggingFaceHub(repo_id=model_id,
                                  model_kwargs={"temperature": 0.2, "max_length": 200},
                                  huggingfacehub_api_token=huggingface_api_key)
             return llm

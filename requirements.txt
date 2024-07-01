@@ -11,3 +11,5 @@ langchain-huggingface
 langchain-anthropic
 openai
 pandas
+langchain-anthropic
+vllm

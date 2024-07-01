@@ -1,4 +1,8 @@
+from langchain.llms import BaseLLM
+from langchain.schema import Generation, LLMResult
 import json
+import time
+import requests
 
 class PDMEvaluator:
     def __init__(self, eval_model, test_model):
@@ -8,15 +12,53 @@ class PDMEvaluator:
         except Exception as e:
             print(f"Error initializing PDMEvaluator: {e}")
     
-    def generate_prompt(self, model, prompt, max_tokens=1000):
-        try:
-            response = model(prompt, max_tokens=max_tokens)
-            if isinstance(response, str):  # This handles the HuggingFace model
-                return response.strip(), None
-            return response['choices'][0]['text'].strip(), response['choices'][0].get('logprobs')
-        except Exception as e:
-            print(f"Error generating prompt: {e}")
+    def generate_prompt(self, model, prompt, max_tokens=1000, retries=3, delay=5):
+        if prompt is None or not isinstance(prompt, str):
+            print("Error: prompt must be a non-empty string")
             return None, None
+
+        attempt = 0
+        while attempt < retries:
+            try:
+                if isinstance(model, BaseLLM):
+                    # LangChain model
+                    result = model(prompt, max_tokens=max_tokens)
+                    
+                    if isinstance(result, str):
+                        generated_text = result.strip()
+                    elif isinstance(result, Generation):
+                        generated_text = result.text.strip()
+                    elif isinstance(result, LLMResult):
+                        generated_text = result.generations[0][0].text.strip()
+                    else:
+                        raise ValueError(f"Unexpected result type from LangChain model: {type(result)}")
+                    
+                    # LangChain doesn't typically provide logprobs
+                    logprobs = None
+                    print("Log probabilities are not available for this LangChain model.")
+                else:
+                    # Handle other model types if needed
+                    response = model(prompt, max_tokens=max_tokens)
+                    if isinstance(response, str):
+                        return response.strip(), None
+                    
+                    generated_text = response['choices'][0]['text'].strip()
+                    logprobs = response['choices'][0].get('logprobs')
+                    
+                    if logprobs is None:
+                        print(f"Log probabilities not available for model: {model}")
+                
+                return generated_text, logprobs
+            
+            except Exception as e:
+                print(f"Error generating prompt: {e}")
+            
+            attempt += 1
+            if attempt < retries:
+                print(f"Retrying... (Attempt {attempt + 1}/{retries})")
+                time.sleep(delay)
+        
+        return None, None
 
     def generate_bootstrap_prompt(self, seed_1, seed_2, seed_3, seed_4):
         try:
@@ -28,6 +70,7 @@ class PDMEvaluator:
     def generate_question_prompt(self, bootstrap_prompt):
         try:
             question_prompt, _ = self.generate_prompt(self.eval_model, bootstrap_prompt)
+            print(f"Generated question prompt: {question_prompt}")
             return question_prompt
         except Exception as e:
             print(f"Error generating question prompt: {e}")
@@ -44,6 +87,8 @@ class PDMEvaluator:
     def compare_logprobs(self, response1, response2):
         try:
             def get_response_logprob(logprobs, response):
+                if logprobs is None:
+                    return 0
                 tokens = response.split()
                 token_logprobs = logprobs['token_logprobs'][-len(tokens):]
                 return sum(token_logprobs)
@@ -53,6 +98,11 @@ class PDMEvaluator:
 
             response1_reversed_logprob = get_response_logprob(response1[1], response2[0]) if response1[1] else 0
             response2_reversed_logprob = get_response_logprob(response2[1], response1[0]) if response2[1] else 0
+
+            print(f"Evaluation model log probability: {response1_logprob}")
+            print(f"Test model log probability: {response2_logprob}")
+            print(f"Evaluation model reversed log probability: {response1_reversed_logprob}")
+            print(f"Test model reversed log probability: {response2_reversed_logprob}")
 
             prob1_better = (response1_logprob + response2_reversed_logprob) / 2
             prob2_better = (response2_logprob + response1_reversed_logprob) / 2
@@ -112,3 +162,6 @@ class PDMEvaluator:
         except Exception as e:
             print(f"Error during evaluation: {e}")
             return []
+
+
+
