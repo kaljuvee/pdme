@@ -1,6 +1,8 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import InferenceApi
+from dotenv import load_dotenv
+import os
 
 # Function to get log probabilities
 def get_log_probs(model, tokenizer, prompt):
@@ -16,9 +18,12 @@ def get_log_probs(model, tokenizer, prompt):
     
     return log_probs
 
+
 # Main function
 def main():
-    model_name = "gpt2"  # You can replace this with any other model available on Hugging Face
+    huggingface_api_key = os.getenv('HUGGINGFACE_API_KEY')
+    # google/gemma-2b, gpt2
+    model_name = "google/gemma-2b"  # You can replace this with any other model available on Hugging Face
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
 
