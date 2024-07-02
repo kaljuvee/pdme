@@ -40,6 +40,9 @@ pip-delete-this-directory.txt
 opti.pub
 opti.txt
 
+#archive copies
+archive/
+
 # Unit test / coverage reports
 htmlcov/
 .tox/

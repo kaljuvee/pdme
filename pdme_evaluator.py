@@ -1,64 +1,63 @@
-from langchain.llms import BaseLLM
-from langchain.schema import Generation, LLMResult
-import json
-import time
-import requests
+import argparse
+import os
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+from huggingface_hub import login
+from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel
+import torch
 
-class PDMEvaluator:
+class PDME:
     def __init__(self, eval_model, test_model):
         try:
             self.eval_model = eval_model
-            self.test_model = test_model
+            self.test_model, self.test_tokenizer = test_model
         except Exception as e:
-            print(f"Error initializing PDMEvaluator: {e}")
-    
-    def generate_prompt(self, model, prompt, max_tokens=1000, retries=3, delay=5):
-        if prompt is None or not isinstance(prompt, str):
-            print("Error: prompt must be a non-empty string")
-            return None, None
+            print(f"Error initializing PDME: {e}")
 
-        attempt = 0
-        while attempt < retries:
-            try:
-                if isinstance(model, BaseLLM):
-                    # LangChain model
-                    result = model(prompt, max_tokens=max_tokens)
-                    
-                    if isinstance(result, str):
-                        generated_text = result.strip()
-                    elif isinstance(result, Generation):
-                        generated_text = result.text.strip()
-                    elif isinstance(result, LLMResult):
-                        generated_text = result.generations[0][0].text.strip()
-                    else:
-                        raise ValueError(f"Unexpected result type from LangChain model: {type(result)}")
-                    
-                    # LangChain doesn't typically provide logprobs
-                    logprobs = None
-                    print("Log probabilities are not available for this LangChain model.")
-                else:
-                    # Handle other model types if needed
-                    response = model(prompt, max_tokens=max_tokens)
-                    if isinstance(response, str):
-                        return response.strip(), None
-                    
-                    generated_text = response['choices'][0]['text'].strip()
-                    logprobs = response['choices'][0].get('logprobs')
-                    
-                    if logprobs is None:
-                        print(f"Log probabilities not available for model: {model}")
+    def get_log_probs_langchain(self, llm, prompt):
+        try:
+            print("Getting log probabilities for LangChain")
+            if hasattr(llm, 'bind') and callable(llm.bind):
+                bound_llm = llm.bind(logprobs=5)
+                response = bound_llm.invoke(prompt)
+                return response.response_metadata.get("logprobs", {}).get("content", [])
+            else:
+                response = llm.invoke(prompt)
+                print("Log probabilities not available for this model.")
+                return None
+        except Exception as e:
+            print(f"Error getting log probabilities: {e}")
+            return None
+    
+    def generate_prompt(self, model, prompt, max_tokens=1000):
+        try:
+            if isinstance(model, PreTrainedModel):
+                print("Generating prompt for Hugging Face model")
+                tokenizer = self.test_tokenizer
                 
+                inputs = tokenizer(prompt, return_tensors='pt')
+                with torch.no_grad():
+                    outputs = model(**inputs, labels=inputs["input_ids"])
+                
+                generated_ids = model.generate(**inputs, max_length=max_tokens)
+                generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+                
+                log_probs = outputs.logits.log_softmax(dim=-1)
+                
+                return generated_text, log_probs.tolist()
+            else:
+                print("Generating prompt for OpenAI / LangChain model")
+                response = model.invoke(prompt, max_tokens=max_tokens)
+                if isinstance(response, str):
+                    generated_text = response.strip()
+                    logprobs = None
+                else:
+                    generated_text = response.generations[0][0].text.strip()
+                    logprobs = self.get_log_probs_langchain(model, prompt)
                 return generated_text, logprobs
-            
-            except Exception as e:
-                print(f"Error generating prompt: {e}")
-            
-            attempt += 1
-            if attempt < retries:
-                print(f"Retrying... (Attempt {attempt + 1}/{retries})")
-                time.sleep(delay)
-        
-        return None, None
+        except Exception as e:
+            print(f"Error generating prompt: {e}")
+            return None, None
 
     def generate_bootstrap_prompt(self, seed_1, seed_2, seed_3, seed_4):
         try:
@@ -89,15 +88,20 @@ class PDMEvaluator:
             def get_response_logprob(logprobs, response):
                 if logprobs is None:
                     return 0
-                tokens = response.split()
-                token_logprobs = logprobs['token_logprobs'][-len(tokens):]
-                return sum(token_logprobs)
+                if isinstance(logprobs, list):
+                    tokens = self.test_tokenizer(response, return_tensors='pt')['input_ids'][0]
+                    token_logprobs = [logprobs[i][token.item()] for i, token in enumerate(tokens)]
+                    return sum(token_logprobs)
+                else:
+                    tokens = response.split()
+                    token_logprobs = logprobs['token_logprobs'][-len(tokens):]
+                    return sum(token_logprobs)
 
-            response1_logprob = get_response_logprob(response1[1], response1[0]) if response1[1] else 0
-            response2_logprob = get_response_logprob(response2[1], response2[0]) if response2[1] else 0
+            response1_logprob = get_response_logprob(response1[1], response1[0])
+            response2_logprob = get_response_logprob(response2[1], response2[0])
 
-            response1_reversed_logprob = get_response_logprob(response1[1], response2[0]) if response1[1] else 0
-            response2_reversed_logprob = get_response_logprob(response2[1], response1[0]) if response2[1] else 0
+            response1_reversed_logprob = get_response_logprob(response1[1], response2[0])
+            response2_reversed_logprob = get_response_logprob(response2[1], response1[0])
 
             print(f"Evaluation model log probability: {response1_logprob}")
             print(f"Test model log probability: {response2_logprob}")
@@ -117,35 +121,6 @@ class PDMEvaluator:
 
     def compare_responses(self, question, response1, response2):
         try:
-            vs_prompt = f"""
-            <prefix><user_start>I want you to create a leaderboard of different large-language models. To do so, I will give you the instructions (prompts) given to the models, and the responses of two models. Please rank the models based on which responses would be preferred by humans. All inputs and outputs should be python dictionaries.
-
-            Here is the prompt:
-            {{
-                "instruction": "{question}",
-            }}
-
-            Here are the outputs of the models:
-            [
-                {{
-                    "model": "evaluation",
-                    "answer": "{response1[0]}"
-                }},
-                {{
-                    "model": "test",
-                    "answer": "{response2[0]}"
-                }}
-            ]
-
-            Now please rank the models by the quality of their answers, so that the model with rank 1 has the best output. Then return a list of the model names and ranks, i.e., produce the following output:
-            [
-                {{'model': <model-name>, 'rank': <model-rank>}},
-                {{'model': <model-name>, 'rank': <model-rank>}}
-            ]
-
-            Your response must be a valid Python dictionary and should contain nothing else because we will directly execute it in Python. Please provide the ranking that the majority of humans would give.
-            <assistant_start>[
-                {{'model': 'evaluation', 'rank': """
             return self.compare_logprobs(response1, response2)
         except Exception as e:
             print(f"Error comparing responses: {e}")
@@ -154,6 +129,7 @@ class PDMEvaluator:
     def evaluate(self, seed_1, seed_2, seed_3, seed_4):
         try:
             bootstrap_prompt = self.generate_bootstrap_prompt(seed_1, seed_2, seed_3, seed_4)
+            print(f"Bootstrap prompt: {bootstrap_prompt}")
             question_prompt = self.generate_question_prompt(bootstrap_prompt)
             eval_response, eval_logprobs = self.generate_prompt(self.eval_model, question_prompt)
             test_response, test_logprobs = self.get_model_response(question_prompt)
@@ -162,6 +138,3 @@ class PDMEvaluator:
         except Exception as e:
             print(f"Error during evaluation: {e}")
             return []
-
-
-

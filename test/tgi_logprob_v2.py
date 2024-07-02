@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import os
 from huggingface_hub import login
 
-load_dotenv()
+
 
 def get_log_probs(model, tokenizer, prompt):
     inputs = tokenizer(prompt, return_tensors='pt')
@@ -15,6 +15,7 @@ def get_log_probs(model, tokenizer, prompt):
     return log_probs
 
 def main():
+    load_dotenv()
     huggingface_api_key = os.getenv('HUGGINGFACE_API_KEY')
     print(f"Hugging Face API key:, ', {huggingface_api_key}")
     if huggingface_api_key:
@@ -22,8 +23,8 @@ def main():
     else:
         raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
 
-    model_name = "google/gemma-2b"
-    # google/gemma-2b, gpt2, EleutherAI/gpt-neo-2.7B, distilGPT2
+    model_name = "EleutherAI/gpt-neo-2.7B"
+    # google/gemma-2b, openai-community/gpt2, EleutherAI/gpt-neo-2.7B, distilGPT2
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
 
@@ -32,4 +33,5 @@ def main():
     print(log_probs)
 
 if __name__ == "__main__":
+    
     main()
