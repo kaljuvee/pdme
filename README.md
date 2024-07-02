@@ -29,9 +29,9 @@
 #### Single test model
  ```
 python sample_pdme_client.py --eval_model openai/gpt-4o --test_model gpt2 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
-python sample_pdme_client.py --eval_model openai/gpt-3.5-turbo-instruct --test_model gpt2 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
+python sample_pdme_client.py --eval_model openai/gpt-3.5-turbo-0125 --test_model gpt2 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
 python sample_pdme_client.py --eval_model openai/gpt-4o --test_model distilGPT2 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
-python sample_pdme_client.py --eval_model openai/gpt-3.5-turbo-instruct --test_model distilGPT2 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
+python sample_pdme_client.py --eval_model openai/gpt-3.5-turbo-0125 --test_model distilGPT2 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
  ```
 #### Multiple test models from a file
 ```
