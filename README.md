@@ -28,10 +28,11 @@
 ### Sample Usage
 #### Single test model
  ```
-python sample_pdme_client.py --eval_model openai/gpt-4o --test_model microsoft/Phi-3-mini-4k-instruct --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
-python sample_pdme_client.py --eval_model openai/gpt-3.5-turbo-instruct --test_model microsoft/Phi-3-mini-4k-instruct --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
-python sample_pdme_client.py --eval_model openai/gpt-4o --test_model meta-llama/Meta-Llama-Guard-2-8B --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
-python sample_pdme_client.py --eval_model openai/gpt-3.5-turbo-instruct --test_model meta-llama/Meta-Llama-Guard-2-8B --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
+python sample_pdme_client.py --eval_model openai/gpt-3.5-turbo-0125 --test_model openai-community/gpt2 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
+python sample_pdme_client.py --eval_model openai/gpt-3.5-turbo-0125 --test_model distilbert/distilgpt2 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
+python sample_pdme_client.py --eval_model openai/gpt-4o --test_model --test_model distilbert/distilgpt2 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
+python sample_pdme_client.py --eval_model openai/gpt-4o --test_model openai-community/gpt2 --seed_1 "an old Englishman" --seed_2 "finding happiness" --seed_3 "rain" --seed_4 "old cars"
+
  ```
 #### Multiple test models from a file
 ```
