@@ -3,38 +3,37 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import InferenceApi
 from dotenv import load_dotenv
 import os
+from huggingface_hub import login
 
-# Function to get log probabilities
+
+
 def get_log_probs(model, tokenizer, prompt):
-    # Tokenize the input prompt
-    inputs = tokenizer(prompt, return_tensors="pt")
-    
-    # Forward pass through the model to get outputs
+    inputs = tokenizer(prompt, return_tensors='pt')
     with torch.no_grad():
-        outputs = model(**inputs, output_attentions=False, output_hidden_states=False, return_dict=True)
-    
-    # Get the log probabilities
-    log_probs = torch.log_softmax(outputs.logits, dim=-1)
-    
+        outputs = model(**inputs, labels=inputs["input_ids"])
+    log_probs = outputs.logits.log_softmax(dim=-1)
     return log_probs
 
-
-# Main function
 def main():
+    load_dotenv()
     huggingface_api_key = os.getenv('HUGGINGFACE_API_KEY')
-    # google/gemma-2b, gpt2
-    model_name = "google/gemma-2b"  # You can replace this with any other model available on Hugging Face
+    # print(f"Hugging Face API key:, ', {huggingface_api_key}")
+    if huggingface_api_key:
+        login(huggingface_api_key)
+    else:
+        raise ValueError("HUGGINGFACE_API_KEY environment variable not set")
+
+    model_name = "EleutherAI/gpt-neo-125m"
+    print('Model name: ', model_name)
+    # google/gemma-2b, openai-community/gpt2, EleutherAI/gpt-neo-2.7B, distilbert/distilgpt2, meta-llama/Llama-2-7b-hf, EleutherAI/gpt-neo-125m, 
+    # microsoft/Phi-3-medium-128k-instruct
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
 
-    # Example prompt
     prompt = "Once upon a time"
-
-    # Get the log probabilities
     log_probs = get_log_probs(model, tokenizer, prompt)
-
-    # Print the log probabilities
     print(log_probs)
 
 if __name__ == "__main__":
+    
     main()

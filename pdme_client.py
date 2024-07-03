@@ -1,8 +1,8 @@
 import argparse
 import os
 from dotenv import load_dotenv
-from pdme_evaluator import PDME
-from langchain_openai import OpenAI
+from opticonomy_pdme import PDME
+from langchain_openai import ChatOpenAI
 from huggingface_hub import login
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import requests
@@ -28,11 +28,12 @@ def load_model(model_name):
     try:        
         if model_name.lower().startswith('openai/'):
             model_id = get_model_id(model_name)
-            print('Evaluator (OpenAI) model: ', model_id)
+            print('OpenAI model: ', model_id)
             openai_api_key = os.getenv('OPENAI_API_KEY')
             if not openai_api_key:
                 raise ValueError("OpenAI API key not found in environment variables.")
-            return OpenAI(model=model_id, temperature=0.2, api_key=openai_api_key)
+            #return ChatOpenAI(model=model_id, temperature=0.2, api_key=openai_api_key)
+            return ChatOpenAI(model=model_id)
         else:
             huggingface_api_key = os.getenv('HUGGINGFACE_API_KEY')
             #print(f"Hugging Face API key:, ', {huggingface_api_key}")
@@ -41,7 +42,7 @@ def load_model(model_name):
             #if not validate_model_id(model_name):
             #    raise ValueError(f"Hugging Face model ID '{model_id}' is invalid or inaccessible.")
             login(huggingface_api_key)
-            print('Test HuggingFace model: ', model_id)
+            print('HuggingFace model: ', model_id)
             tokenizer = AutoTokenizer.from_pretrained(model_id)
             model = AutoModelForCausalLM.from_pretrained(model_id)
             return model, tokenizer
@@ -51,11 +52,13 @@ def load_model(model_name):
 
 def evaluate_models(eval_model_name, test_models, seeds):
     eval_model = load_model(eval_model_name)
+    print("Evaluator model: ", eval_model_name)
     if eval_model is None:
         print("Failed to load the evaluation model. Exiting.")
         return
 
     for test_model_name in test_models:
+        print("Test model: ", test_model_name)
         test_model, tokenizer = load_model(test_model_name)
         if test_model is None:
             print(f"Failed to load the test model '{test_model_name}'. Skipping.")
