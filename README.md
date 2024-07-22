@@ -4,7 +4,7 @@
 
 ### Clone the Repo
   ```
-  git clone https://github.com/opticonomy/pdme.git
+  git clone https://github.com/kaljuvee/pdme.git
   ```
 
 ### Create and Activate the Virtual Environment
